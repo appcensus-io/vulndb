@@ -55,9 +55,11 @@ class NVD:
                 total_results += 1
                 offset += 1
                 if limit and total_results >= limit:
+                    time.sleep(config.request_delay)
                     return
 
             if jres["resultsPerPage"] <= 0:
+                time.sleep(config.request_delay)
                 return
 
             time.sleep(config.request_delay)
@@ -95,9 +97,11 @@ class NVD:
                 total_results += 1
                 offset += 1
                 if limit and total_results >= limit:
+                    time.sleep(config.request_delay)
                     return
 
             if jres["resultsPerPage"] <= 0:
+                time.sleep(config.request_delay)
                 return
 
             time.sleep(config.request_delay)
