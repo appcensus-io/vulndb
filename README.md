@@ -35,7 +35,7 @@ The vulndb cli exposes the following commands:
 ```
 $ vulndb admin create --help
 
- Usage: vulndb admin create_all [OPTIONS]
+ Usage: vulndb admin create [OPTIONS]
 
  Create schema, tables, indices, and user for active configuration.
 
@@ -47,9 +47,9 @@ $ vulndb admin create --help
 #### drop
 
 ```
-$ vulndb admin drop_all --help
+$ vulndb admin drop --help
 
- Usage: vulndb admin drop_all [OPTIONS]
+ Usage: vulndb admin drop [OPTIONS]
 
  Drop schema, tables, indices, and user for active configuration.
 
@@ -72,8 +72,7 @@ Usage: vulndb nvd ingest [OPTIONS]
 
 Options:
   --scope TEXT      Ingest only cve or cpe
-  --offset INTEGER  Offset into available entries to begin wtih  [default: 0]
-  --limit INTEGER   Limit the number of entries to ingest
+  --update    --no-update          Acquire records newer than current data [default: no-update]
   --help            Show this message and exit.
 ```
 
