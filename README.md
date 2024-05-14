@@ -64,7 +64,7 @@ $ vulndb admin drop --help
 
 #### ingest
 
-Ingest Vulnerability (CPE) and Product (CPE) records from the National Vulnerability Database (https://nvd.nist.gov).
+Ingest Vulnerability (CVE) and Product (CPE) records from the National Vulnerability Database (https://nvd.nist.gov).
 
 ```
 $ vulndb nvd ingest --help
