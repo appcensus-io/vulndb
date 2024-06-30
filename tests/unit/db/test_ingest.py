@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
+from bomsquad.vulndb.db.checkpoints import Checkpoints
 from bomsquad.vulndb.db.ingest import Ingest
 from bomsquad.vulndb.db.nvddb import instance as nvddb
 from bomsquad.vulndb.model.cpe import CPE
@@ -26,55 +27,49 @@ class TestIngest:
         for cve in nvddb.cve_all():
             assert isinstance(cve, CVE)
 
-    @pytest.mark.parametrize(
-        ("offset", "last_mod_start_date"),
-        [
-            (None, None),
-            (0, None),
-            (42, None),
-            (None, datetime.now(timezone.utc)),
-            (42, datetime.now(timezone.utc)),
-        ],
-    )
-    def test_cve_api_args(self, offset: int | None, last_mod_start_date: datetime | None) -> None:
+    @pytest.mark.parametrize("update", [False, True])
+    def test_cve_api_args(self, update: bool) -> None:
         with patch("bomsquad.vulndb.db.ingest.NVD.vulnerabilities") as vulns:
-            if offset:
-                Ingest.cve(offset, last_mod_start_date=last_mod_start_date)
-            else:
-                Ingest.cve(last_mod_start_date=last_mod_start_date)
-            assert vulns.call_count == 1
-            args, kwargs = vulns.call_args
-            if offset:
-                assert args[0] == offset
-            else:
-                assert args[0] == 0
-            assert kwargs["last_mod_start_date"] == last_mod_start_date
+            NullCVE = CVE.__new__(CVE)
+            vulns.return_value.first_ts = datetime.now(timezone.utc)
+            vulns.return_value.__iter__.return_value = iter([NullCVE, NullCVE, NullCVE])
+            with patch("bomsquad.vulndb.db.ingest.Checkpoints.upsert") as cp_upsert:
+                with patch("bomsquad.vulndb.db.ingest.nvddb.upsert_cve") as upsert_cve:
+                    Ingest.cve(update=update)
+                    assert vulns.call_count == 1
+                    args, kwargs = vulns.call_args
+                    assert kwargs["offset"] == 0
+                    cp = Checkpoints()
+                    if update:
+                        assert kwargs["last_mod_start_date"] == cp.last_updated("cve")
+                    else:
+                        assert kwargs["last_mod_start_date"] is None
+
+                    assert cp_upsert.call_count == 1
+                    assert upsert_cve.call_count == 3
 
     def test_cpe_data_ingested(self, cpe_examples: Path) -> None:
         assert nvddb.cpe_count() == len(list(cpe_examples.iterdir()))
         for cpe in nvddb.cpe_all():
             assert isinstance(cpe, CPE)
 
-    @pytest.mark.parametrize(
-        ("offset", "last_mod_start_date"),
-        [
-            (None, None),
-            (0, None),
-            (42, None),
-            (None, datetime.now(timezone.utc)),
-            (42, datetime.now(timezone.utc)),
-        ],
-    )
-    def test_cpe_api_args(self, offset: int | None, last_mod_start_date: datetime | None) -> None:
+    @pytest.mark.parametrize("update", [False, True])
+    def test_cpe_api_args(self, update: bool) -> None:
         with patch("bomsquad.vulndb.db.ingest.NVD.products") as products:
-            if offset:
-                Ingest.cpe(offset, last_mod_start_date=last_mod_start_date)
-            else:
-                Ingest.cpe(last_mod_start_date=last_mod_start_date)
-            assert products.call_count == 1
-            args, kwargs = products.call_args
-            if offset:
-                assert args[0] == offset
-            else:
-                assert args[0] == 0
-            assert kwargs["last_mod_start_date"] == last_mod_start_date
+            NullCPE = CPE.__new__(CPE)
+            products.return_value.first_ts = datetime.now(timezone.utc)
+            products.return_value.__iter__.return_value = iter([NullCPE, NullCPE, NullCPE])
+            with patch("bomsquad.vulndb.db.ingest.Checkpoints.upsert") as cp_upsert:
+                with patch("bomsquad.vulndb.db.ingest.nvddb.upsert_cpe") as upsert_cpe:
+                    Ingest.cpe(update=update)
+                    assert products.call_count == 1
+                    args, kwargs = products.call_args
+                    assert kwargs["offset"] == 0
+                    cp = Checkpoints()
+                    if update:
+                        assert kwargs["last_mod_start_date"] == cp.last_updated("cpe")
+                    else:
+                        assert kwargs["last_mod_start_date"] is None
+
+                    assert cp_upsert.call_count == 1
+                    assert upsert_cpe.call_count == 3

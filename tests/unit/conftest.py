@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Generator
 from unittest.mock import patch
@@ -63,15 +64,19 @@ def test_data(
     from bomsquad.vulndb.db.ingest import Ingest
 
     with patch("bomsquad.vulndb.db.ingest.NVD.vulnerabilities") as vulns:
+        vulns.return_value.first_ts = datetime.utcnow()
         vulns.return_value.__iter__.return_value = [
             CVE.model_validate(json.loads(path.read_text())) for path in cve_examples.iterdir()
         ]
+
         Ingest.cve()
 
     with patch("bomsquad.vulndb.db.ingest.NVD.products") as products:
+        products.return_value.first_ts = datetime.utcnow()
         products.return_value.__iter__.return_value = [
             CPE.model_validate(json.loads(path.read_text())) for path in cpe_examples.iterdir()
         ]
+
         Ingest.cpe()
 
     saved_ecosystems = OSV.ECOSYSTEMS
