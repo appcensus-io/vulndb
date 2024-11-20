@@ -39,7 +39,7 @@ class TestIngest:
             vulns.return_value = iter(cves)
             with patch("bomsquad.vulndb.db.ingest.Checkpoints.upsert") as cp_upsert:
                 with patch("bomsquad.vulndb.db.ingest.nvddb.upsert_cve") as upsert_cve:
-                    Ingest.cve(update=update)
+                    Ingest.cve()
                     assert vulns.call_count == 1
                     args, kwargs = vulns.call_args
                     assert kwargs["offset"] == 0
@@ -69,7 +69,7 @@ class TestIngest:
             products.return_value = iter(cpes)
             with patch("bomsquad.vulndb.db.ingest.Checkpoints.upsert") as cp_upsert:
                 with patch("bomsquad.vulndb.db.ingest.nvddb.upsert_cpe") as upsert_cpe:
-                    Ingest.cpe(update=update)
+                    Ingest.cpe()
                     assert products.call_count == 1
                     args, kwargs = products.call_args
                     assert kwargs["offset"] == 0
