@@ -53,13 +53,12 @@ class Ingest:
     @classmethod
     def cve(
         cls,
-        update: bool = False,
     ) -> None:
         api = NVD()
         cp = Checkpoints()
         gen = _NVDResultGen(
             api.vulnerabilities(
-                offset=0, last_mod_start_date=cp.last_updated("cve") if update else None
+                offset=0, last_mod_start_date=cp.last_updated("cve")
             )
         )
 
@@ -71,12 +70,13 @@ class Ingest:
     @classmethod
     def cpe(
         cls,
-        update: bool = False,
     ) -> None:
         api = NVD()
         cp = Checkpoints()
         gen = _NVDResultGen(
-            api.products(offset=0, last_mod_start_date=cp.last_updated("cpe") if update else None)
+            api.products(
+                offset=0, last_mod_start_date=cp.last_updated("cpe")
+            )
         )
 
         if not gen.empty:
