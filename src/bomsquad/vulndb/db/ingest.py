@@ -43,7 +43,7 @@ class _NVDResultGen:
             try:
                 self.current = next(self.result_sets)
             except StopIteration:
-                self.empty = True
+                empty = True
                 raise
             else:
                 return next(self)
