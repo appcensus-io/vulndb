@@ -10,7 +10,7 @@ may evolve to incorporate additional datasets, or serve further use cases as we 
 
 1. You will need poetry and poethepoet installed to build from source. pyenv or another environment
    manager is recommended.
-2. You may optionally acquire an API key for the National Vulnerability Database
+2. You may optionally acquire an API key for the National Vulnerability Database: [Request an API Key](https://nvd.nist.gov/developers/request-an-api-key)
 
 ## Installation
 
