@@ -59,7 +59,7 @@ class TestNVDDB:
         last_modified = nvddb.cve_last_modified()
         assert last_modified
         assert last_modified.replace(microsecond=0) == datetime.fromisoformat(
-            "2023-10-28T19:15:38+00:00"
+            "2024-11-19T21:55:35+00:00"
         )
 
     @pytest.mark.parametrize(

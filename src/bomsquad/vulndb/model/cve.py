@@ -1,3 +1,4 @@
+# CVE API: v2.2.1
 from __future__ import annotations
 
 from datetime import datetime
@@ -8,6 +9,7 @@ from pydantic import BaseModel
 from bomsquad.vulndb.model.cvss20 import CVSS20
 from bomsquad.vulndb.model.cvss30 import CVSS30
 from bomsquad.vulndb.model.cvss31 import CVSS31
+from bomsquad.vulndb.model.cvss40 import CVSS40
 from bomsquad.vulndb.model.nvd_enum import NVDEnum
 
 
@@ -56,10 +58,17 @@ class CVSSv31(BaseModel):
     impactScore: float | None
 
 
+class CVSSv40(BaseModel):
+    source: str
+    type: Ordinal
+    cvssData: CVSS40
+
+
 class Metrics(BaseModel):
     cvssMetricV2: list[CVSSv2] = []
     cvssMetricV30: list[CVSSv30] = []
     cvssMetricV31: list[CVSSv31] = []
+    cvssMetricV40: list[CVSSv40] = []
 
 
 class Weakness(BaseModel):

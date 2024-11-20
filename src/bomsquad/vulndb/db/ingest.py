@@ -19,21 +19,34 @@ class _NVDResultGen:
     result_sets: Generator[NVDResultSet[Any], None, None]
     current: NVDResultSet[Any]
     first_ts: datetime
+    empty: bool
 
     def __init__(self, result_sets: Generator[NVDResultSet[Any], None, None]) -> None:
         self.result_sets = result_sets
-        self.current = next(self.result_sets)
-        self.first_ts = self.current.timestamp
+        try:
+            self.current = next(self.result_sets)
+            self.first_ts = self.current.timestamp
+            self.empty = False
+        except StopIteration:
+            self.empty = True
+            pass
 
     def __iter__(self) -> Iterator[Any]:
         return self
 
     def __next__(self) -> Any:
+        if self.empty:
+            raise StopIteration
         try:
             return next(self.current)
         except StopIteration:
-            self.current = next(self.result_sets)
-            return next(self)
+            try:
+                self.current = next(self.result_sets)
+            except StopIteration:
+                self.empty = True
+                raise
+            else:
+                return next(self)
 
 
 class Ingest:
@@ -50,9 +63,10 @@ class Ingest:
             )
         )
 
-        for cve in gen:
-            nvddb.upsert_cve(cve)
-        cp.upsert("cve", gen.first_ts)
+        if not gen.empty:
+            for cve in gen:
+                nvddb.upsert_cve(cve)
+            cp.upsert("cve", gen.first_ts)
 
     @classmethod
     def cpe(
@@ -65,9 +79,10 @@ class Ingest:
             api.products(offset=0, last_mod_start_date=cp.last_updated("cpe") if update else None)
         )
 
-        for cpe in gen:
-            nvddb.upsert_cpe(cpe)
-        cp.upsert("cpe", gen.first_ts)
+        if not gen.empty:
+            for cpe in gen:
+                nvddb.upsert_cpe(cpe)
+            cp.upsert("cpe", gen.first_ts)
 
     @classmethod
     def all_osv(cls) -> None:
