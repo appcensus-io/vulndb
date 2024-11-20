@@ -1,3 +1,4 @@
+# Latest supported OSV schema (https://github.com/ossf/osv-schema): v1.6.7
 from datetime import datetime
 from enum import Enum
 from typing import Any
@@ -11,6 +12,7 @@ from pydantic import BaseModel
 class SeverityType(str, Enum):
     CVSS_V2 = "CVSS_V2"
     CVSS_V3 = "CVSS_V3"
+    CVSS_V4 = "CVSS_V4"
 
 
 class Severity(BaseModel):
