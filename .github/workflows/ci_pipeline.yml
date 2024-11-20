@@ -60,10 +60,10 @@ jobs:
         poetry run poe data_validation_test
     - name: Delete failed db instance
       id: delete-database
-      if: steps.test-database.failure()
+      if: steps.test-database.outcome == 'failure'
       run: rm ~/.vulndb/vuln.db
     - name: Create database
-      if: ${{ (github.event_name == 'workflow_dispatch') && ((steps.restore-database.outputs.cache-hit != 'true') || (steps.test-database.failure()) ) }}
+      if: ${{ (github.event_name == 'workflow_dispatch') && ((steps.restore-database.outputs.cache-hit != 'true') || (steps.test-database.outcome == 'failure' ) ) }}
       run: |
         poetry run vulndb admin create
     - name: Build database
