@@ -60,18 +60,24 @@ jobs:
         poetry run poe data_validation_test
     - name: Delete failed db instance
       id: delete-database
-      if: steps.test-database.failure()
-      run: rm ~/.vulndb/vuln.db
+      if: steps.test-database.outcome == 'failure'
+      run: |
+        poetry run vulndb admin drop
     - name: Create database
-      if: ${{ (github.event_name == 'workflow_dispatch') && ((steps.restore-database.outputs.cache-hit != 'true') || (steps.test-database.failure()) ) }}
+      if: ${{ (github.event_name == 'workflow_dispatch') && ((steps.restore-database.outputs.cache-hit != 'true') || (steps.test-database.outcome == 'failure' ) ) }}
       run: |
         poetry run vulndb admin create
     - name: Build database
       if: ${{ github.event_name == 'workflow_dispatch' }}
       run: |
-        poetry run vulndb nvd ingest
+        poetry run vulndb nvd ingest --update
         poetry run vulndb osv ingest
         poetry run poe data_validation_test
+    - name: Delete expired cache
+      id: delete-previous
+      if: ${{ steps.restore-database.outputs.cache-hit == 'true' }}
+      run: |
+        gh cache delete ${{ steps.restore-database.outputs.cache-primary-key }}
     - name: Save Database to Cache
       id: cache-database-if-valid
       uses: actions/cache/save@v4
