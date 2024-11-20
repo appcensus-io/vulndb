@@ -57,9 +57,7 @@ class Ingest:
         api = NVD()
         cp = Checkpoints()
         gen = _NVDResultGen(
-            api.vulnerabilities(
-                offset=0, last_mod_start_date=cp.last_updated("cve")
-            )
+            api.vulnerabilities(offset=0, last_mod_start_date=cp.last_updated("cve"))
         )
 
         if not gen.empty:
@@ -73,11 +71,7 @@ class Ingest:
     ) -> None:
         api = NVD()
         cp = Checkpoints()
-        gen = _NVDResultGen(
-            api.products(
-                offset=0, last_mod_start_date=cp.last_updated("cpe")
-            )
-        )
+        gen = _NVDResultGen(api.products(offset=0, last_mod_start_date=cp.last_updated("cpe")))
 
         if not gen.empty:
             for cpe in gen:
