@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -27,6 +28,8 @@ class Config(BaseModel):
         with ConfigResolver.resolve_config().open("rb") as fh:
             obj = tomli.load(fh)["vulndb"]
             config = Config.parse_obj(obj)
+            if config.nvd_api_key == "$NVD_API_KEY":
+                config.nvd_api_key = os.environ.get("NVD_API_KEY")
             return config
 
 

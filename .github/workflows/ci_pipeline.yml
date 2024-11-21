@@ -1,28 +1,37 @@
 name: CI Pipeline
 
 on:
-  push:
-    branches: [ "**" ]
   workflow_dispatch:
-
-permissions:
-  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      NVD_API_KEY: ${{secrets.NVD_API_KEY}}
+    outputs:
+      semver: ${{ steps.install-current-version.outputs.version}}
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
         python-version: "3.10"
+    - name: Extract branch name
+      shell: bash
+      run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+      id: extract_branch
     - name: Install dependencies
+      id: install-current-version
       run: |
         python -m pip install --upgrade pip
         pip install poetry
-        poetry version "$(poetry version -s).$PATCH_NUMBER"
+        poetry version "$(poetry version -s).$PATCH_NUMBER" 
         poetry install -v
+        echo "version=$(poetry version -s)" >> "$GITHUB_OUTPUT"
       env:
         PATCH_NUMBER: ${{ github.run_number }}
     - name: Build
@@ -39,16 +48,70 @@ jobs:
       with:
         name: dist
         path: dist/**
+    - name: Restore database
+      id: restore-database 
+      uses: actions/cache/restore@v4
+      with:
+        key: ${{ steps.extract_branch.outputs.branch }}.${{ github.sha }}.db
+        restore-keys: |
+          ${{ steps.extract_branch.outputs.branch }}.
+        path: |
+          ~/.vulndb/vuln.db
+    - name: Create database
+      if: ${{ (github.event_name == 'workflow_dispatch') && (steps.restore-database.outputs.cache-matched-key == '' ) }}
+      run: |
+        poetry run vulndb admin create
     - name: Build database
       if: ${{ github.event_name == 'workflow_dispatch' }}
       run: |
-        poetry run vulndb admin create
         poetry run vulndb nvd ingest
         poetry run vulndb osv ingest
         poetry run poe data_validation_test
-    - name: Store database artifcats
-      if: ${{ github.event_name == 'workflow_dispatch' }}
-      uses: actions/upload-artifact@v4
+    - name: Delete expired cache
+      id: delete-previous
+      if: ${{ steps.restore-database.outputs.cache-hit == 'true' }}
+      run: |
+        gh cache delete ${{ steps.restore-database.outputs.cache-matched-key }}
+    - name: Save Database to Cache
+      id: cache-database-if-valid
+      uses: actions/cache/save@v4
       with:
-        name: database
-        path: ~/.vulndb/vuln.db
+        key: ${{ steps.extract_branch.outputs.branch }}.${{ github.sha }}.db
+        path: |
+          ~/.vulndb/vuln.db
+  release: 
+    runs-on: ubuntu-22.04
+    #temporary change to test releases against this branch
+    if: ${{ (github.event_name == 'workflow_dispatch') || (github.ref == 'refs/heads/feature/db-pipeline-artifact') }}
+    permissions:
+      contents: write
+    needs: build
+    steps:
+    - uses: actions/checkout@v4
+    - name: Extract branch name
+      shell: bash
+      run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+      id: extract_branch
+    - name: Restore database
+      id: restore-database 
+      uses: actions/cache/restore@v4
+      with:
+        key: ${{ steps.extract_branch.outputs.branch }}.${{ github.sha }}.db
+        restore-keys: |
+          ${{ steps.extract_branch.outputs.branch }}.
+        path: |
+          ~/.vulndb/vuln.db
+    - name: Compress db
+      shell: bash
+      run: bzip2 /home/runner/.vulndb/vuln.db
+    - name: Restore build artifacts
+      uses: actions/download-artifact@v4
+    - name: Upload asset to Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          /home/runner/.vulndb/vuln.db.bz2
+          /home/runner/work/vulndb/vulndb/dist/**
+        name: ${{ needs.build.outputs.semver }}
+        tag_name: ${{ needs.build.outputs.semver }} 
+        make_latest: true
