@@ -5,12 +5,14 @@ on:
     branches: [ "**" ]
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
   build:
     runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python 3.10
@@ -83,6 +85,20 @@ jobs:
       uses: actions/cache/save@v4
       with:
         key: ${{ steps.extract_branch.outputs.branch }}.${{ github.sha }}.db
+        path: |
+          ~/.vulndb/vuln.db
+  release: 
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+    - name: Restore database
+      id: restore-database 
+      uses: actions/cache/restore@v4
+      with:
+        key: ${{ steps.extract_branch.outputs.branch }}.${{ github.sha }}.db
+        restore-keys: |
+          ${{ steps.extract_branch.outputs.branch }}.
         path: |
           ~/.vulndb/vuln.db
     - name: Upload asset to Release
