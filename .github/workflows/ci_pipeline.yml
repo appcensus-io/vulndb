@@ -93,6 +93,7 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       contents: write
+    needs: build
     steps:
     - name: Extract branch name
       shell: bash
