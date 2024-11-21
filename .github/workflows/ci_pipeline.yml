@@ -92,6 +92,10 @@ jobs:
     permissions:
       contents: write
     steps:
+    - name: Extract branch name
+      shell: bash
+      run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+      id: extract_branch
     - name: Restore database
       id: restore-database 
       uses: actions/cache/restore@v4
