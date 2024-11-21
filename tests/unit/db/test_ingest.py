@@ -28,8 +28,7 @@ class TestIngest:
         for cve in nvddb.cve_all():
             assert isinstance(cve, CVE)
 
-    @pytest.mark.parametrize("update", [False, True])
-    def test_cve_api_args(self, update: bool) -> None:
+    def test_cve_api_args(self) -> None:
         examples = Path(__file__).parent / "examples/nvd/cve/"
         cves = [
             CVEResultSet("vulnerabilities", json.loads(path.read_text()), None)
@@ -39,15 +38,12 @@ class TestIngest:
             vulns.return_value = iter(cves)
             with patch("bomsquad.vulndb.db.ingest.Checkpoints.upsert") as cp_upsert:
                 with patch("bomsquad.vulndb.db.ingest.nvddb.upsert_cve") as upsert_cve:
-                    Ingest.cve(update=update)
+                    Ingest.cve()
                     assert vulns.call_count == 1
                     args, kwargs = vulns.call_args
                     assert kwargs["offset"] == 0
                     cp = Checkpoints()
-                    if update:
-                        assert kwargs["last_mod_start_date"] == cp.last_updated("cve")
-                    else:
-                        assert kwargs["last_mod_start_date"] is None
+                    assert kwargs["last_mod_start_date"] == cp.last_updated("cve")
                     args, kwargs = cp_upsert.call_args
                     assert args[0] == "cve"
                     assert args[1] == cves[0].timestamp
@@ -69,15 +65,12 @@ class TestIngest:
             products.return_value = iter(cpes)
             with patch("bomsquad.vulndb.db.ingest.Checkpoints.upsert") as cp_upsert:
                 with patch("bomsquad.vulndb.db.ingest.nvddb.upsert_cpe") as upsert_cpe:
-                    Ingest.cpe(update=update)
+                    Ingest.cpe()
                     assert products.call_count == 1
                     args, kwargs = products.call_args
                     assert kwargs["offset"] == 0
                     cp = Checkpoints()
-                    if update:
-                        assert kwargs["last_mod_start_date"] == cp.last_updated("cpe")
-                    else:
-                        assert kwargs["last_mod_start_date"] is None
+                    assert kwargs["last_mod_start_date"] == cp.last_updated("cpe")
                     args, kwargs = cp_upsert.call_args
                     assert args[0] == "cpe"
                     assert args[1] == cpes[0].timestamp

@@ -41,8 +41,9 @@ class DatabaseManager:
             pass
 
     def drop(self, show_only: bool = False) -> None:
-        if config.db.path.exists() and show_only is False:
-            config.db.path.unlink()
+        dbpath = config.db.path.expanduser()
+        if dbpath.exists() and show_only is False:
+            dbpath.unlink()
 
     def create_tables(self, show_only: bool = False) -> None:
         tables = [
