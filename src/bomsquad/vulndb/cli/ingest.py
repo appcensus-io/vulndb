@@ -11,12 +11,11 @@ osv_app = typer.Typer(name="osv")
 @nvd_app.command(name="ingest")
 def _nvd_ingest(
     scope: Optional[str] = typer.Option(default=None, help="Ingest only cve or cpe "),
-    update: bool = typer.Option(default=False, help="Acquire records newer than current data"),
 ) -> None:
     if scope == "cve" or scope is None:
-        Ingest.cve(update=update)
+        Ingest.cve()
     if scope == "cpe" or scope is None:
-        Ingest.cpe(update=update)
+        Ingest.cpe()
 
 
 @osv_app.command(name="ingest")
