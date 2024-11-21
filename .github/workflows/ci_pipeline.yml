@@ -89,6 +89,8 @@ jobs:
           ~/.vulndb/vuln.db
   release: 
     runs-on: ubuntu-22.04
+    #temporary change to test releases against this branch
+    if: github.ref == 'refs/heads/feature/db-pipeline-artifact'
     permissions:
       contents: write
     needs: build
@@ -111,3 +113,4 @@ jobs:
       if: github.ref == 'refs/heads/main'
       with:
         files: ~/.vulndb/vuln.db
+        draft: true
