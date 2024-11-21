@@ -64,7 +64,7 @@ jobs:
       run: |
         poetry run vulndb admin drop
     - name: Create database
-      if: ${{ (github.event_name == 'workflow_dispatch') && ((steps.restore-database.outputs.cache-matched-key != '') || (steps.test-database.outcome == 'failure' ) ) }}
+      if: ${{ (github.event_name == 'workflow_dispatch') && ((steps.restore-database.outputs.cache-matched-key == '') || (steps.test-database.outcome == 'failure' ) ) }}
       run: |
         poetry run vulndb admin create
     - name: Build database
