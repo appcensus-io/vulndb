@@ -80,6 +80,8 @@ jobs:
       if: ${{ steps.restore-database.outputs.cache-hit == 'true' }}
       run: |
         gh cache delete ${{ steps.restore-database.outputs.cache-primary-key }}
+        with:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Save Database to Cache
       id: cache-database-if-valid
       uses: actions/cache/save@v4
