@@ -86,20 +86,13 @@ class NVD:
     CVE_STEM = "https://services.nvd.nist.gov/rest/json/cves/2.0"
     CPE_STEM = "https://services.nvd.nist.gov/rest/json/cpes/2.0"
 
-    @cached_property
-    def _requests(self) -> Session:
-        session = Session()
-        retry_policy = Retry(
-            total=config.retry_tries,  # maximum number of retries
-            backoff_factor=2,  # base backoff factor
-            backoff_jitter=config.retry_backoff,  # add retry_backoff as jitter
-            backoff_max=config.retry_max_delay,  # cap the max
-            status_forcelist=[500, 502, 503, 504],  # the HTTP status codes to retry on
-        )
-        retry_adapter = HTTPAdapter(max_retries=retry_policy)
-        session.mount("https://", retry_adapter)
-        return session
-
+    @retry(
+        Exception,
+        backoff=config.retry_backoff,
+        tries=config.retry_tries,
+        max_delay=config.retry_max_delay,
+        logger=logger,
+    )
     def vulnerabilities(
         self,
         offset: int = 0,
@@ -132,6 +125,13 @@ class NVD:
 
             time.sleep(config.request_delay)
 
+    @retry(
+        Exception,
+        backoff=config.retry_backoff,
+        tries=config.retry_tries,
+        max_delay=config.retry_max_delay,
+        logger=logger,
+    )
     def products(
         self,
         offset: int = 0,
