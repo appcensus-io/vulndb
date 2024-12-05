@@ -23,7 +23,11 @@ class Config(BaseModel):
     def load(cls) -> "Config":
         with ConfigResolver.resolve_config().open("rb") as fh:
             obj = tomli.load(fh)["vulndb"]
+            nvd_api_key = obj["vulndb"]["nvd_api_key"]
+            if "$NVD_API_KEY" in nvd_api_key:
+                nvd_api_key = os.environ.get("NVD_API_KEY", nvd_api_key)
             config = Config.parse_obj(obj)
+
             return config
 
 

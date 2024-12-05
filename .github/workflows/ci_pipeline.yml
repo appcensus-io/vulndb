@@ -11,6 +11,7 @@ jobs:
       actions: write
     env:
       GH_TOKEN: ${{ github.token }}
+      NVD_API_KEY: ${{secrets.NVD_API_KEY}}
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python 3.10
