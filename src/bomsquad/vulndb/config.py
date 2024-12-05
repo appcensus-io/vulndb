@@ -18,6 +18,9 @@ class Config(BaseModel):
     db: DBConfig
     nvd_api_key: Optional[str] = None
     request_delay: int
+    retry_backoff: int = 3
+    retry_tries: int = 10
+    retry_max_delay: int = 30
 
     @classmethod
     def load(cls) -> "Config":

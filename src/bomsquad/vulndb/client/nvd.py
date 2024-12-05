@@ -84,7 +84,13 @@ class NVD:
     CVE_STEM = "https://services.nvd.nist.gov/rest/json/cves/2.0"
     CPE_STEM = "https://services.nvd.nist.gov/rest/json/cpes/2.0"
 
-    @retry(Exception, backoff=1, tries=10, max_delay=5, logger=logger)
+    @retry(
+        Exception,
+        backoff=config.retry_backoff,
+        tries=config.retry_tries,
+        max_delay=config.retry_max_delay,
+        logger=logger,
+    )
     def vulnerabilities(
         self,
         offset: int = 0,
@@ -117,7 +123,13 @@ class NVD:
 
             time.sleep(config.request_delay)
 
-    @retry(Exception, backoff=1, tries=10, max_delay=5, logger=logger)
+    @retry(
+        Exception,
+        backoff=config.retry_backoff,
+        tries=config.retry_tries,
+        max_delay=config.retry_max_delay,
+        logger=logger,
+    )
     def products(
         self,
         offset: int = 0,
