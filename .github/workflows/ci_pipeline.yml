@@ -110,7 +110,7 @@ jobs:
           ~/.vulndb/vuln.db
     - name: Troubleshooting step - compress db
       shell: bash
-      run: tar -czvf /home/runner/.vulndb/db.tar.gz /home/runner/.vulndb/vuln.db
+      run: tar -czvf /home/runner/.vulndb/vulndb.tar.gz /home/runner/.vulndb/vuln.db
     - name: Upload asset to Release
       uses: softprops/action-gh-release@v2
       with:
