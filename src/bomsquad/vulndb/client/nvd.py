@@ -140,12 +140,14 @@ class NVD:
     ) -> Generator[NVDResultSet[CPE], None, None]:
         while True:
             url = f"{self.CPE_STEM}?startIndex={offset}"
+            log_msg = f"Querying from index: {offset} to {limit}"
             if last_mod_start_date:
                 dtstart = last_mod_start_date.isoformat()
                 dtend = datetime.now(timezone.utc).isoformat()
                 url += f"&lastModStartDate={urlquote(dtstart)}&lastModEndDate={urlquote(dtend)}"
                 logger.info(f"Querying from {offset} - {limit} and {dtstart} - {dtend}")
             headers = {"Accept": "application/json"}
+            logger.info(log_msg)
             if config.nvd_api_key:
                 headers["apiKey"] = config.nvd_api_key
 

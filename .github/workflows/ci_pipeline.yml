@@ -94,6 +94,7 @@ jobs:
       contents: write
     needs: build
     steps:
+    - uses: actions/checkout@v4
     - name: Extract branch name
       shell: bash
       run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
@@ -107,8 +108,14 @@ jobs:
           ${{ steps.extract_branch.outputs.branch }}.
         path: |
           ~/.vulndb/vuln.db
+    - name: Troubleshooting step - whoami
+      shell: bash
+      run: whoami
+    - name: Troubleshooting step - find database
+      shell: bash
+      run: find / -name "vuln.db" 2>/dev/null
     - name: Upload asset to Release
       uses: softprops/action-gh-release@v2
       with:
-        files: ~/.vulndb/vuln.db
+        files: '~/.vulndb/vuln.db'
         draft: true
