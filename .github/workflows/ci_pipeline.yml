@@ -108,14 +108,11 @@ jobs:
           ${{ steps.extract_branch.outputs.branch }}.
         path: |
           ~/.vulndb/vuln.db
-    - name: Troubleshooting step - whoami
-      shell: bash
-      run: whoami
     - name: Troubleshooting step - find database
       shell: bash
-      run: find / -name "vuln.db" 2>/dev/null
+      run: find /home/runner/ -name "vuln.db" -exec ls -la {} \; 2>/dev/null 
     - name: Upload asset to Release
       uses: softprops/action-gh-release@v2
       with:
-        files: '~/.vulndb/vuln.db'
+        files: '/home/runner/.vulndb/vuln.db'
         draft: true
