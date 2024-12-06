@@ -4,6 +4,7 @@ import time
 from abc import abstractmethod
 from datetime import datetime
 from datetime import timezone
+from functools import cached_property
 from typing import Any
 from typing import Generator
 from typing import Generic
@@ -12,8 +13,9 @@ from typing import Optional
 from typing import TypeVar
 from urllib.parse import quote as urlquote
 
-import requests
-from retry import retry
+from requests import Session
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 
 from bomsquad.vulndb.config import instance as config
 from bomsquad.vulndb.model.cpe import CPE
@@ -84,13 +86,20 @@ class NVD:
     CVE_STEM = "https://services.nvd.nist.gov/rest/json/cves/2.0"
     CPE_STEM = "https://services.nvd.nist.gov/rest/json/cpes/2.0"
 
-    @retry(
-        Exception,
-        backoff=config.retry_backoff,
-        tries=config.retry_tries,
-        max_delay=config.retry_max_delay,
-        logger=logger,
-    )
+    @cached_property
+    def _requests(self) -> Session:
+        session = Session()
+        retry_policy = Retry(
+            total=config.retry_tries,  # maximum number of retries
+            backoff_factor=2,  # base backoff factor
+            backoff_jitter=config.retry_backoff,  # add retry_backoff as jitter
+            backoff_max=config.retry_max_delay,  # cap the max
+            status_forcelist=[500, 502, 503, 504],  # the HTTP status codes to retry on
+        )
+        retry_adapter = HTTPAdapter(max_retries=retry_policy)
+        session.mount("https://", retry_adapter)
+        return session
+
     def vulnerabilities(
         self,
         offset: int = 0,
@@ -110,7 +119,7 @@ class NVD:
             if config.nvd_api_key:
                 headers["apiKey"] = config.nvd_api_key
 
-            r = requests.get(url, headers=headers)
+            r = self._requests.get(url, headers=headers)
             if r.status_code != 200:
                 r.raise_for_status()
 
@@ -123,13 +132,6 @@ class NVD:
 
             time.sleep(config.request_delay)
 
-    @retry(
-        Exception,
-        backoff=config.retry_backoff,
-        tries=config.retry_tries,
-        max_delay=config.retry_max_delay,
-        logger=logger,
-    )
     def products(
         self,
         offset: int = 0,
@@ -147,7 +149,7 @@ class NVD:
             if config.nvd_api_key:
                 headers["apiKey"] = config.nvd_api_key
 
-            r = requests.get(url, headers=headers)
+            r = self._requests.get(url, headers=headers)
             if r.status_code != 200:
                 r.raise_for_status()
 
