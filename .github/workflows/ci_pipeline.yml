@@ -118,7 +118,6 @@ jobs:
         make_latest: true
   update:
     runs-on: ubuntu-22.04
-    #temporary change to test releases against this branch
     if: ${{ (github.event_name == 'schedule') || (github.ref == 'refs/heads/main') }}
     permissions:
       contents: write
