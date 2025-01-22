@@ -2,6 +2,8 @@ name: CI Pipeline
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: 0 8 * * * 
 
 jobs:
   build:
@@ -28,7 +30,7 @@ jobs:
       id: install-current-version
       run: |
         python -m pip install --upgrade pip
-        pip install poetry
+        pip install poetry~=1.8
         poetry version "$(poetry version -s).$PATCH_NUMBER" 
         poetry install -v
         echo "version=$(poetry version -s)" >> "$GITHUB_OUTPUT"
@@ -81,8 +83,7 @@ jobs:
           ~/.vulndb/vuln.db
   release: 
     runs-on: ubuntu-22.04
-    #temporary change to test releases against this branch
-    if: ${{ (github.event_name == 'workflow_dispatch') || (github.ref == 'refs/heads/feature/db-pipeline-artifact') }}
+    if: ${{ (github.event_name == 'workflow_dispatch') || (github.ref == 'refs/heads/main') }}
     permissions:
       contents: write
     needs: build
@@ -115,3 +116,33 @@ jobs:
         name: ${{ needs.build.outputs.semver }}
         tag_name: ${{ needs.build.outputs.semver }} 
         make_latest: true
+  update:
+    runs-on: ubuntu-22.04
+    if: ${{ (github.event_name == 'schedule') || (github.ref == 'refs/heads/main') }}
+    permissions:
+      contents: write
+    needs: build
+    steps:
+    - uses: actions/checkout@v4
+    - name: Extract branch name
+      shell: bash
+      run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+      id: extract_branch
+    - name: Restore database
+      id: restore-database 
+      uses: actions/cache/restore@v4
+      with:
+        key: ${{ steps.extract_branch.outputs.branch }}.${{ github.sha }}.db
+        restore-keys: |
+          ${{ steps.extract_branch.outputs.branch }}.
+        path: |
+          ~/.vulndb/vuln.db
+    - name: Compress db
+      shell: bash
+      run: bzip2 /home/runner/.vulndb/vuln.db
+    - name: Update database in existing Release
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          /home/runner/.vulndb/vuln.db.bz2
