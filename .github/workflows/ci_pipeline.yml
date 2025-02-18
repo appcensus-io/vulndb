@@ -60,20 +60,16 @@ jobs:
         path: |
           ~/.vulndb/vuln.db
     - name: Create database
-      if: ${{ (github.event_name == 'workflow_dispatch') && (steps.restore-database.outputs.cache-matched-key == '' ) }}
+      if: ${{ (github.event_name == 'workflow_dispatch') && (steps.restore-database.outputs.cache-hit != 'true' ) }}
       run: |
         poetry run vulndb admin create
-    - name: Build database
+    - name: Build Database
+      id: build-or-update-db
       if: ${{ github.event_name == 'workflow_dispatch' }}
       run: |
         poetry run vulndb nvd ingest
         poetry run vulndb osv ingest
         poetry run poe data_validation_test
-    - name: Delete expired cache
-      id: delete-previous
-      if: ${{ steps.restore-database.outputs.cache-hit == 'true' }}
-      run: |
-        gh cache delete ${{ steps.restore-database.outputs.cache-matched-key }}
     - name: Save Database to Cache
       id: cache-database-if-valid
       uses: actions/cache/save@v4
@@ -81,6 +77,10 @@ jobs:
         key: ${{ steps.extract_branch.outputs.branch }}.${{ github.sha }}.db
         path: |
           ~/.vulndb/vuln.db
+    - name: Delete expired cache
+      id: delete-previous
+      run: |
+        gh cache delete ${{ steps.restore-database.outputs.cache-matched-key }}
   release: 
     runs-on: ubuntu-22.04
     if: ${{ (github.event_name == 'workflow_dispatch') || (github.ref == 'refs/heads/main') }}
