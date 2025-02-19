@@ -70,7 +70,7 @@ jobs:
     - name: Create database
       if: ${{ hashFiles('~/.vulndb/vuln.db') == '' || steps.db-test.db_status != '0' }}
       run: |
-        rm ~/.vulndb/vuln.db
+        rm -f ~/.vulndb/vuln.db
         poetry run vulndb admin create
     - name: Build or Update Database
       id: build-or-update-db
