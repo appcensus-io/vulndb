@@ -54,16 +54,25 @@ jobs:
       id: restore-database 
       uses: actions/cache/restore@v4
       with:
-        key: ${{ steps.extract_branch.outputs.branch }}.${{ github.sha }}.db
+        key: ${{ steps.extract_branch.outputs.branch }}-${{ github.sha }}-${{ github.run_id }}.db
         restore-keys: |
-          ${{ steps.extract_branch.outputs.branch }}.
+          ${{ steps.extract_branch.outputs.branch }}-${{ github.sha }}
+          ${{ steps.extract_branch.outputs.branch }}
+          "main"
         path: |
           ~/.vulndb/vuln.db
-    - name: Create database
-      if: ${{ (github.event_name == 'workflow_dispatch') && (steps.restore-database.outputs.cache-hit != 'true' ) }}
+    - name: Test Restored Database
+      id: db-test
+      if: ${{ hashFiles('~/.vulndb/vuln.db') != '' }}
+      continue-on-error: true
       run: |
+        poetry run poe data_validation_test ; echo "db_status=$?" >> $GITHUB_OUTPUT
+    - name: Create database
+      if: ${{ hashFiles('~/.vulndb/vuln.db') == '' || steps.db-test.db_status != '0' }}
+      run: |
+        rm ~/.vulndb/vuln.db
         poetry run vulndb admin create
-    - name: Build Database
+    - name: Build or Update Database
       id: build-or-update-db
       if: ${{ github.event_name == 'workflow_dispatch' }}
       run: |
@@ -74,13 +83,14 @@ jobs:
       id: cache-database-if-valid
       uses: actions/cache/save@v4
       with:
-        key: ${{ steps.extract_branch.outputs.branch }}.${{ github.sha }}.db
+        key: ${{ steps.extract_branch.outputs.branch }}-${{ github.sha }}-${{ github.run_id }}.db
         path: |
           ~/.vulndb/vuln.db
     - name: Delete expired cache
+      if: ${{ steps.restore-database.outputs.cache-primary-key != '' }}
       id: delete-previous
       run: |
-        gh cache delete ${{ steps.restore-database.outputs.cache-matched-key }}
+        gh cache delete ${{ steps.restore-database.outputs.cache-primary-key }}
   release: 
     runs-on: ubuntu-22.04
     if: ${{ (github.event_name == 'workflow_dispatch') || (github.ref == 'refs/heads/main') }}
@@ -97,9 +107,11 @@ jobs:
       id: restore-database 
       uses: actions/cache/restore@v4
       with:
-        key: ${{ steps.extract_branch.outputs.branch }}.${{ github.sha }}.db
+        key: ${{ steps.extract_branch.outputs.branch }}-${{ github.sha }}-${{ github.run_id }}.db
         restore-keys: |
-          ${{ steps.extract_branch.outputs.branch }}.
+          ${{ steps.extract_branch.outputs.branch }}-${{ github.sha }}
+          ${{ steps.extract_branch.outputs.branch }}
+          "main"
         path: |
           ~/.vulndb/vuln.db
     - name: Compress db
@@ -132,9 +144,11 @@ jobs:
       id: restore-database 
       uses: actions/cache/restore@v4
       with:
-        key: ${{ steps.extract_branch.outputs.branch }}.${{ github.sha }}.db
+        key: ${{ steps.extract_branch.outputs.branch }}-${{ github.sha }}-${{ github.run_id }}.db
         restore-keys: |
-          ${{ steps.extract_branch.outputs.branch }}.
+          ${{ steps.extract_branch.outputs.branch }}-${{ github.sha }}
+          ${{ steps.extract_branch.outputs.branch }}
+          "main"
         path: |
           ~/.vulndb/vuln.db
     - name: Compress db
