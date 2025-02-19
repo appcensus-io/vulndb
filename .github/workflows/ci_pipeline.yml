@@ -86,11 +86,6 @@ jobs:
         key: ${{ steps.extract_branch.outputs.branch }}-${{ github.sha }}-${{ github.run_id }}.db
         path: |
           ~/.vulndb/vuln.db
-    - name: Delete expired cache
-      if: ${{ steps.restore-database.outputs.cache-primary-key != '' }}
-      id: delete-previous
-      run: |
-        gh cache delete ${{ steps.restore-database.outputs.cache-primary-key }}
   release: 
     runs-on: ubuntu-22.04
     if: ${{ (github.event_name == 'workflow_dispatch') || (github.ref == 'refs/heads/main') }}
