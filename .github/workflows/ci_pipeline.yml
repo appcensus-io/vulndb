@@ -66,9 +66,9 @@ jobs:
       if: ${{ hashFiles('~/.vulndb/vuln.db') != '' }}
       continue-on-error: true
       run: |
-        poetry run poe data_validation_test ; echo "db_status=$?" >> $GITHUB_OUTPUT
+        poetry run poe data_validation_test
     - name: Create database
-      if: ${{ hashFiles('~/.vulndb/vuln.db') == '' || steps.db-test.db_status != '0' }}
+      if: ${{ hashFiles('~/.vulndb/vuln.db') == '' || steps.db-test.outcome != 'success' }}
       run: |
         rm -f ~/.vulndb/vuln.db
         poetry run vulndb admin create
